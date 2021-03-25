@@ -1,0 +1,79 @@
+var button  = document.getElementById('startButton');
+  var info = null, attempts;
+  var temp = []
+
+  function startGame(){
+    button.disabled = true;
+    button.style.cursor = "wait";
+    a();
+    button.disabled = false;
+    button.style.cursor = "default";
+    chrome.storage.sync.set({ "times": temp})
+    window.location.href = "game.html";
+
+
+  }
+
+
+  function a(isRetry){
+    var start, end = null;
+    var url = "https://en.wikipedia.org/w/api.php";
+    var params = {
+      action: "query",
+      format: "json",
+      list: "random",
+      rnlimit: "50"
+    };
+    url = url + "?origin=*";
+    Object.keys(params).forEach(function(key){url += "&" + key + "=" + params[key];});
+    fetch(url)
+    .then(function(response){return response.json();})
+    .then(function(response) {
+      var randoms = response.query.random;
+      for (var r in randoms) {
+        if(!randoms[r].title.includes(":")){
+          if(start != null && end == null){
+            end = randoms[r].title;
+          }
+         if(start == null){
+            start = randoms[r].title;
+          }
+        }
+
+      }
+      temp =  [start,end];
+      console.log(temp)
+
+  })
+    .then(function(response){
+      for(var i = 0; i < 2; i++){
+      var url = "https://en.wikipedia.org/w/api.php";
+
+      var params = {
+        action: "query",
+        format: "json",
+        titles: temp[i], // issue here, test returns before first fetch look into promises : https://stackoverflow.com/questions/44980247/how-to-finish-all-fetch-before-executing-next-function-in-react
+        prop: "info",
+        inprop: "url|talkid"
+      };
+
+      url = url + "?origin=*";
+      Object.keys(params).forEach(function(key){url += "&" + key + "=" + params[key];});
+
+      fetch(url)
+      .then(function(response){return response.json();})
+      .then(function(response) {
+        var pages = response.query.pages;
+      for (var p in pages) {
+          temp[i] =  pages[p].fullurl;
+          console.log(temp)
+      }
+
+
+
+    })
+      }
+
+    })
+  .catch(function(error){console.log(error);});
+}
